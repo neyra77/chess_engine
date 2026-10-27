@@ -82,13 +82,12 @@ def evaluate_board(board):
 # Alpha beta pruning engine
 # wrapper function to return best move
 def alpha_beta(board, depth):
-    if depth < 0:
+    if depth <= 0:
         return None
     best_move = None
     best_eval = float('-inf') if board.turn == chess.WHITE else float('inf')
     legal_moves = list(board.legal_moves)
     player_turn = board.turn
-    cur_best_moves = []
     
     alpha = float('-inf')
     beta = float('inf')
@@ -98,21 +97,17 @@ def alpha_beta(board, depth):
         board.pop()
         if player_turn == chess.WHITE:
             alpha = max(alpha, eval)
-            if eval > best_eval:
+            # Interesting edge case here, if board starts at place where all moves lead to checkmate
+            # then best_move would never have been updated 
+            if best_move is None or eval > best_eval: 
                 best_eval = eval
                 best_move = m
-                cur_best_moves = [m]
-            elif eval == best_eval:
-                cur_best_moves.append(m)
         else:
             beta = min(beta, eval)
-            if eval < best_eval:
+            if best_move is None or eval < best_eval: # 
                 best_eval = eval
                 best_move = m
-                cur_best_moves = [m]
-            elif eval == best_eval:
-                cur_best_moves.append(m)
-    return random.choice(cur_best_moves) if cur_best_moves else best_move   
+    return best_move 
         
 # The actual alpha beta
 def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
@@ -126,7 +121,7 @@ def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
             eval = alpha_beta_engine(board, depth - 1, alpha, beta, False)
             board.pop()
             max_eval = max(max_eval, eval)
-            alpha = max(alpha, eval)
+            alpha = max(alpha, max_eval)
             if beta <= alpha:
                 break
 
@@ -138,7 +133,7 @@ def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
             eval = alpha_beta_engine(board, depth-1, alpha, beta, True)
             board.pop()
             min_eval = min(min_eval, eval)
-            beta = min(beta, eval)
+            beta = min(beta, min_eval)
             if beta <= alpha:
                 break
         return min_eval 
@@ -149,7 +144,7 @@ def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
 # Minimax engine
 #wrapper function for minimax_engine to return the best move 
 def minimax(board, depth):
-    if depth < 0: # Just in case 
+    if depth <= 0: # Just in case 
         return None
     best_move = None
     best_eval = float('-inf') if board.turn == chess.WHITE else float('inf')
@@ -235,25 +230,40 @@ def evaluate_material(board):
 # Chooses moves based on the pieces on the board given a move
 def material_evaluation_engine(board):
     legal_moves = list(board.legal_moves)
+    cur_best_moves = []
     # Push, evaluate, pop, choose max
-    # Lets say white is positive, black wants to minimize
-    # lets start with infinity
-    cur_min = float('inf')
-    cur_min_move = None
-    cur_min_move_list = [] # So that it randomizes same point moves
-    for m in legal_moves:
-        board.push(m)
-        score = 0
-        score = evaluate_material(board)
+    if board.turn == chess.WHITE:
+        cur_max = float('-inf')
+        cur_max_move = None
+        for m in legal_moves:
+            board.push(m)
+            score = 0
+            score = evaluate_material(board)
 
-        if cur_min > score:
-            cur_min = score
-            cur_min_move = m
-            cur_min_move_list = []
-        if cur_min == score:
-            cur_min_move_list.append(m)
+            if cur_max < score:
+                cur_max = score
+                cur_max_move = m
+                cur_best_moves = []
+            if cur_max == score:
+                cur_best_moves.append(m)
 
-        board.pop()
+            board.pop()
+    else:    
+        cur_min_move = None
+        cur_min_move_list = [] # So that it randomizes same point moves
+        for m in legal_moves:
+            board.push(m)
+            score = 0
+            score = evaluate_material(board)
+
+            if cur_min > score:
+                cur_min = score
+                cur_min_move = m
+                cur_best_moves = []
+            if cur_min == score:
+                cur_best_moves.append(m)
+
+            board.pop()
     
     # Here we make sure that if there are multiple moves with the same score, we choose one randomly
     if len(cur_min_move_list) > 0:
