@@ -1,5 +1,11 @@
-import chess
-from chessEngine import random_engine, material_evaluation_engine, minimax
+import chess, random
+from chessEngine import random_engine, material_evaluation_engine, minimax, alpha_beta
+
+ENGINES = {
+    "material_v1": material_evaluation_engine,
+    "minimax_v2": lambda board: minimax(board, depth=2),
+    "alpha_beta_v3": lambda board: alpha_beta(board, depth=2),
+}
 
 def play_engine_game(white_engine, black_engine):
     board = chess.Board()
@@ -15,51 +21,40 @@ def play_engine_game(white_engine, black_engine):
     return board.result(claim_draw=True)
 
 def main():
-    #result = play_engine_game(random_engine, material_evaluation_engine)
-    #print(f"Game result: {result}")
-
-    #v1 vs v2
-    """
-    random_engine_wins = 0
-    material_engine_wins = 0
+    # Generalized engine comparison
+    engine1 = "minimax_v2"
+    engine2 = "alpha_beta_v3"
+    engine1_wins = 0
+    engine2_wins = 0
     ties = 0
-    for i in range(1000):
-        result = play_engine_game(random_engine, material_evaluation_engine)
+    num_games = 100
+    for i in range(num_games):
+        # Randomize which engine plays which
+        white_engine = ENGINES[engine1]
+        black_engine = ENGINES[engine2]
+        invert_colors = random.choice([True, False])
+        if invert_colors:
+            white_engine, black_engine = black_engine, white_engine
+
+        result = play_engine_game(white_engine, black_engine)
         if result == '1-0':
-            random_engine_wins += 1
+            engine1_wins += int(not invert_colors)
+            engine2_wins += int(invert_colors)
         elif result == '0-1':
-            material_engine_wins += 1
+            engine1_wins += int(invert_colors)
+            engine2_wins += int(not invert_colors)
         else:
             ties += 1
         print(f"Game {i+1} result: {result}")
-    print(f"Random engine wins: {random_engine_wins}")
-    print(f"Material evaluation engine wins: {material_engine_wins}")
-    print(f"Ties: {ties}")
-    print(f"Percent that Material evaluation won: {material_engine_wins / 1000 * 100}%")
-    print(f"Percent that Random engine won: {random_engine_wins / 1000 * 100}%")
-    print(f"Percent that tied: {ties / 1000 * 100}%")
-    """
+        print(f"{engine1} played {'white' if not invert_colors else 'black'}")
+        print(f"{engine2} played {'white' if invert_colors else 'black'}\n")
 
-    #v2 vs v3 (Minimax depth 3 only position info)
-    material_engine_wins = 0
-    minimax_engine_wins = 0
-    ties = 0
-    for i in range(1000):
-        result = play_engine_game(material_evaluation_engine, 
-                                  lambda board: minimax(board, depth=2))
-        if result == '1-0':
-            material_engine_wins += 1
-        elif result == '0-1':
-            minimax_engine_wins += 1
-        else:
-            ties += 1
-        print(f"Game {i+1} result: {result}")
-    print(f"Material evaluation engine wins: {material_engine_wins}")
-    print(f"Minimax engine wins: {minimax_engine_wins}")
+    print(f"{engine1} wins: {engine1_wins}")
+    print(f"{engine2} wins: {engine2_wins}")
     print(f"Ties: {ties}")
-    print(f"Percent that Material evaluation won: {material_engine_wins / 1000 * 100}%")
-    print(f"Percent that Minimax engine won: {minimax_engine_wins / 1000 * 100}%")
-    print(f"Percent that tied: {ties / 1000 * 100}%")
+    print(f"Percent that {engine1} won: {engine1_wins / num_games * 100}%")
+    print(f"Percent that {engine2} won: {engine2_wins / num_games * 100}%")
+    print(f"Percent that tied: {ties / num_games * 100}%")
 
 if __name__ == "__main__":
     main()

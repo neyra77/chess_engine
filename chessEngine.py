@@ -57,7 +57,7 @@ def choose_move(board):
     #return minimax(board, 4)
     #4. Alpha beta pruning engine, uncomment to use
     return alpha_beta(board, 4)
-    # return alpha_beta(board, 6)
+
     
 
 # Evaluate the board position for minimax
@@ -87,6 +87,8 @@ def alpha_beta(board, depth):
     best_move = None
     best_eval = float('-inf') if board.turn == chess.WHITE else float('inf')
     legal_moves = list(board.legal_moves)
+    random.shuffle(legal_moves)
+
     player_turn = board.turn
     
     alpha = float('-inf')
@@ -114,9 +116,12 @@ def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or board.is_game_over(claim_draw=True):
         return evaluate_board(board)
     
+
+    legal_moves = list(board.legal_moves)
+    random.shuffle(legal_moves)
     if maximizing_player:
         max_eval = float('-inf')
-        for move in board.legal_moves:
+        for move in legal_moves:
             board.push(move)
             eval = alpha_beta_engine(board, depth - 1, alpha, beta, False)
             board.pop()
@@ -128,7 +133,7 @@ def alpha_beta_engine(board, depth, alpha, beta, maximizing_player):
         return max_eval
     else:
         min_eval = float('inf')
-        for move in board.legal_moves:
+        for move in legal_moves:
             board.push(move)
             eval = alpha_beta_engine(board, depth-1, alpha, beta, True)
             board.pop()
@@ -149,6 +154,7 @@ def minimax(board, depth):
     best_move = None
     best_eval = float('-inf') if board.turn == chess.WHITE else float('inf')
     legal_moves = list(board.legal_moves)
+    random.shuffle(legal_moves)
     player_turn = board.turn
     cur_best_moves = []
     for m in legal_moves:
@@ -157,7 +163,7 @@ def minimax(board, depth):
         board.pop()
 
         if player_turn == chess.WHITE:
-            if eval > best_eval:
+            if best_move is None or eval > best_eval:
                 best_eval = eval
                 best_move = m
                 cur_best_moves = [m]
@@ -230,6 +236,7 @@ def evaluate_material(board):
 # Chooses moves based on the pieces on the board given a move
 def material_evaluation_engine(board):
     legal_moves = list(board.legal_moves)
+    random.shuffle(legal_moves)
     cur_best_moves = []
     # Push, evaluate, pop, choose max
     if board.turn == chess.WHITE:
@@ -243,14 +250,14 @@ def material_evaluation_engine(board):
             if cur_max < score:
                 cur_max = score
                 cur_max_move = m
-                cur_best_moves = []
-            if cur_max == score:
+                cur_best_moves = [m]
+            elif cur_max == score:
                 cur_best_moves.append(m)
 
             board.pop()
     else:    
+        cur_min = float('inf')
         cur_min_move = None
-        cur_min_move_list = [] # So that it randomizes same point moves
         for m in legal_moves:
             board.push(m)
             score = 0
@@ -259,17 +266,17 @@ def material_evaluation_engine(board):
             if cur_min > score:
                 cur_min = score
                 cur_min_move = m
-                cur_best_moves = []
-            if cur_min == score:
+                cur_best_moves = [m]
+            elif cur_min == score:
                 cur_best_moves.append(m)
 
             board.pop()
     
     # Here we make sure that if there are multiple moves with the same score, we choose one randomly
-    if len(cur_min_move_list) > 0:
-        cur_min_move = random.choice(cur_min_move_list)
+    if len(cur_best_moves) > 0:
+        return random.choice(cur_best_moves)
 
-    return cur_min_move  
+    return None  
     
 
 # chessEngine v0.1
